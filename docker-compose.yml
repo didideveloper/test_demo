@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14
+    container_name: school_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: schooldb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./seed_db:/docker-entrypoint-initdb.d
+
+  backend:
+    build: ./backend
+    container_name: school_backend
+    restart: always
+    ports:
+      - "5007:5007"
+    environment:
+      NODE_ENV: development
+      PORT: 5007
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/schooldb
+      COOKIE_DOMAIN: localhost
+      JWT_ACCESS_TOKEN_SECRET: your-access-token-secret-key
+      JWT_REFRESH_TOKEN_SECRET: your-refresh-token-secret-key
+      CSRF_TOKEN_SECRET: your-csrf-secret-key
+      JWT_ACCESS_TOKEN_TIME_IN_MS: 3600000
+      JWT_REFRESH_TOKEN_TIME_IN_MS: 86400000
+      CSRF_TOKEN_TIME_IN_MS: 3600000
+      UI_URL: http://localhost:5173
+      API_URL: http://localhost:5007
+      MAIL_FROM_USER: noreply@schoolapp.com
+      EMAIL_VERIFICATION_TOKEN_SECRET: your-email-verification-secret
+      EMAIL_VERIFICATION_TOKEN_TIME_IN_MS: 3600000
+      PASSWORD_SETUP_TOKEN_SECRET: your-password-setup-secret
+      PASSWORD_SETUP_TOKEN_TIME_IN_MS: 3600000
+      RESEND_API_KEY: your-resend-api-key
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: school_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:5007
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
